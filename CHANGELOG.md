@@ -41,57 +41,142 @@ This changelog documents all development changes made to the AI Consulting Playb
 
 ## 🚀 Latest Updates (December 18, 2025)
 
-### 🤖 AI Coach Webhook Integration - MAJOR FEATURE
-**What:** Connected AI Coach chat to n8n webhook for dynamic AI-powered responses
-**Files Created:**
-- `src/services/aiChatService.js` - New API service for webhook communication
-
-**Files Changed:**
-- `src/components/AICoach.jsx` - Complete rewrite with webhook integration
-
-**Features Implemented:**
-1. **n8n Webhook Integration**: Messages now sent to `https://fiyasolutions.app.n8n.cloud/webhook/32fad67f-4be9-4670-8abc-d5028304fcd5`
-2. **Loading State**: Animated typing indicator while waiting for AI response
-3. **Error Handling**: Graceful error messages when webhook fails
-4. **Context Awareness**: Sends current chapter info and user progress with each message
-5. **Conversation History**: Includes last 10 messages for context continuity
-6. **Dark Mode Support**: Full dark mode styling for chat interface
-7. **Auto-scroll**: Messages auto-scroll to bottom for better UX
-8. **Disabled States**: Buttons disabled during loading to prevent duplicate sends
-
-**Webhook Payload Structure:**
-```json
-{
-  "message": "User's message",
-  "context": {
-    "chapter": { "id": 1, "title": "...", "subtitle": "..." },
-    "userProgress": {
-      "sectionsRead": 3,
-      "exercisesCompleted": 2,
-      "quizScore": 80,
-      "videoWatched": true,
-      "completed": false
-    }
-  },
-  "conversationHistory": [...],
-  "timestamp": "2025-12-18T..."
-}
-```
-
-**Technical Implementation:**
-- Async/await pattern for webhook calls
-- Handles both JSON and plain text responses from n8n
-- Multiple response format support (`response`, `message`, `output`, `text`)
-- Error boundary with user-friendly messages
-- React refs for auto-scrolling
-- Proper disabled states during loading
+### 🤖 AI Coach Webhook Integration - IN PROGRESS ⚠️
+**Status:** Frontend complete, but connection to n8n webhook NOT fully working yet
+**What:** Attempted to connect AI Coach chat to n8n webhook for dynamic AI-powered responses
 
 ---
 
-### 📝 CLAUDE.md Minor Enhancement
-**What:** Added Inter font specification to Tech Stack documentation
+#### 📁 Files Created:
+| File | Purpose |
+|------|---------|
+| `src/services/aiChatService.js` | API service for n8n webhook communication |
+| `public/_headers` | Cloudflare Pages CSP headers for CORS |
+
+#### 📝 Files Modified:
+| File | Changes |
+|------|---------|
+| `src/components/AICoach.jsx` | Complete rewrite with webhook integration, loading states, dark mode |
+| `index.html` | Added Content Security Policy meta tag |
+| `vite.config.js` | Added dev proxy for CORS bypass (localhost only) |
+| `CLAUDE.md` | Added AI Coach integration documentation |
+
+---
+
+#### ✅ What's WORKING:
+1. **Frontend UI Complete**: Chat interface with loading states, error handling, dark mode
+2. **n8n Workflow Working**: RAG Agent processes queries and returns responses (verified in n8n)
+3. **Webhook Receives Requests**: POST requests reach n8n successfully
+4. **CSP Headers Configured**: Content Security Policy allows n8n domain
+
+#### ❌ What's NOT WORKING:
+1. **Empty Response from Webhook**: App receives `{"response":""}` or empty body
+2. **CORS on Localhost**: Browser blocks reading response (works around with Vite proxy, but still empty)
+3. **Response Body Configuration**: n8n "Respond to Webhook" node may not be passing data correctly
+
+---
+
+#### 🔧 n8n Workflow Configuration:
+**Webhook URL:** `https://fiyasolutions.app.n8n.cloud/webhook/32fad67f-4be9-4670-8abc-d5028304fcd5`
+
+**Workflow Flow:**
+```
+Webhook (POST) → Reranking RAG Agent → Respond to Webhook
+                       ↓
+              OpenAI Chat Model (gpt-4o-mini)
+              Simple Memory (20 messages)
+              Supabase Vector Store (playbook chapters)
+              Cohere Reranker
+```
+
+**Webhook Node Settings:**
+- HTTP Method: POST
+- Response Mode: "Using Respond to Webhook Node"
+
+**Agent Node Settings:**
+- Source for Prompt: "Connected Chat Trigger Node"
+- Prompt (User Message): `{{ $json.chatInput }}`
+- System Message: AI consulting coach persona with Supabase tool access
+
+**Respond to Webhook Node Settings (NEEDS FIXING):**
+- Respond With: JSON
+- Response Body: `{{ $json.output }}` ← **This returns empty!**
+
+---
+
+#### 🐛 Debugging Done:
+1. **curl test confirmed** webhook returns `Content-Length: 0`:
+```bash
+curl -X POST "https://fiyasolutions.app.n8n.cloud/webhook/32fad67f-4be9-4670-8abc-d5028304fcd5" \
+  -H "Content-Type: application/json" \
+  -d '{"chatInput": "Hello"}'
+# Returns: empty body, Content-Length: 0
+```
+
+2. **n8n execution shows output**: Agent DOES generate response (visible in n8n Output panel)
+3. **Problem isolated**: "Respond to Webhook" node not returning the agent's output
+
+---
+
+#### 🔨 FOR NEXT DEVELOPER - To Fix:
+
+**Option 1: Fix n8n Respond to Webhook Node**
+The Response Body `{{ $json.output }}` isn't working. Try:
+- Change to: `{{ { response: $json.output } }}`
+- Or use "All Incoming Items" option
+- Or add a "Set" node before Respond to Webhook to explicitly structure the response
+
+**Option 2: Test with Simple Webhook First**
+Create a test workflow: `Webhook → Set Node → Respond to Webhook`
+- Set Node: manually set `response` field
+- Verify basic webhook response works before adding Agent complexity
+
+**Option 3: Check n8n Webhook CORS Settings**
+- n8n Cloud may need CORS headers configured
+- Check if there's a setting in n8n for "Access-Control-Allow-Origin"
+
+**Option 4: Use Cloudflare Worker as Proxy**
+- Create a Cloudflare Worker to proxy requests to n8n
+- Worker can add CORS headers to response
+- Update `aiChatService.js` to call the Worker URL instead
+
+---
+
+#### 📋 Current Frontend Payload:
+```javascript
+// src/services/aiChatService.js sends:
+{
+  chatInput: "User's message"  // Field expected by n8n Agent
+}
+
+// Expected response format:
+{
+  response: "AI's reply text"
+}
+```
+
+---
+
+#### 📂 Reference Files in Repo:
+- `Webhook-flow.txt` - Full n8n workflow JSON export
+- `Respond-to-webhook.JPG` - Screenshot of n8n Respond node config
+- `Respond-to-webhook2.JPG` - Updated screenshot
+- `Reranking-agent.JPG` - Screenshot of Agent node config
+
+---
+
+#### 🚀 Deployment:
+- **Platform**: Cloudflare Pages
+- **Repo**: https://github.com/Drfiya/Playbook
+- **Auto-deploy**: Pushes to `main` branch trigger deployment
+- **Build command**: `npm run build`
+- **Output directory**: `dist`
+
+---
+
+### 📝 CLAUDE.md Enhancement
+**What:** Added AI Coach integration documentation and Inter font specification
 **Files Changed:** `CLAUDE.md`
-**Details:** Updated styling description from "navy/silver palette" to "navy/silver palette, Inter font" to accurately reflect the configured font family in `tailwind.config.js`
 
 ---
 
