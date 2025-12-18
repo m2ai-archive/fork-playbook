@@ -39,7 +39,109 @@ This changelog documents all development changes made to the AI Consulting Playb
 
 ---
 
-## 🚀 Latest Updates (November 12, 2025)
+## 🚀 Latest Updates (December 18, 2025)
+
+### 🤖 AI Coach Webhook Integration - MAJOR FEATURE
+**What:** Connected AI Coach chat to n8n webhook for dynamic AI-powered responses
+**Files Created:**
+- `src/services/aiChatService.js` - New API service for webhook communication
+
+**Files Changed:**
+- `src/components/AICoach.jsx` - Complete rewrite with webhook integration
+
+**Features Implemented:**
+1. **n8n Webhook Integration**: Messages now sent to `https://fiyasolutions.app.n8n.cloud/webhook/32fad67f-4be9-4670-8abc-d5028304fcd5`
+2. **Loading State**: Animated typing indicator while waiting for AI response
+3. **Error Handling**: Graceful error messages when webhook fails
+4. **Context Awareness**: Sends current chapter info and user progress with each message
+5. **Conversation History**: Includes last 10 messages for context continuity
+6. **Dark Mode Support**: Full dark mode styling for chat interface
+7. **Auto-scroll**: Messages auto-scroll to bottom for better UX
+8. **Disabled States**: Buttons disabled during loading to prevent duplicate sends
+
+**Webhook Payload Structure:**
+```json
+{
+  "message": "User's message",
+  "context": {
+    "chapter": { "id": 1, "title": "...", "subtitle": "..." },
+    "userProgress": {
+      "sectionsRead": 3,
+      "exercisesCompleted": 2,
+      "quizScore": 80,
+      "videoWatched": true,
+      "completed": false
+    }
+  },
+  "conversationHistory": [...],
+  "timestamp": "2025-12-18T..."
+}
+```
+
+**Technical Implementation:**
+- Async/await pattern for webhook calls
+- Handles both JSON and plain text responses from n8n
+- Multiple response format support (`response`, `message`, `output`, `text`)
+- Error boundary with user-friendly messages
+- React refs for auto-scrolling
+- Proper disabled states during loading
+
+---
+
+### 📝 CLAUDE.md Minor Enhancement
+**What:** Added Inter font specification to Tech Stack documentation
+**Files Changed:** `CLAUDE.md`
+**Details:** Updated styling description from "navy/silver palette" to "navy/silver palette, Inter font" to accurately reflect the configured font family in `tailwind.config.js`
+
+---
+
+## 🚀 Previous Updates (November 13, 2025)
+
+### ✨ NEW: Video Transcripts Collection Added  
+**Complete integration of 15 chapter video transcripts for enhanced accessibility**
+
+#### Transcripts Addition:
+- **Location**: New `/transcripts/` folder  
+- **Content**: 15 comprehensive video transcripts from AI Consulting Playbook series
+- **Coverage**: All chapters from Day 1 through Day 15
+- **Format**: Plain text files with descriptive filenames
+- **Size**: 4,197 lines of transcript content added to repository
+
+#### Files Added:
+```
+transcripts/
+├── Consulting Playbook Day 1_Why Most AI Consultants Will Fail.txt
+├── Consulting Playbook Day 2_The Art of the Discovery Call (P1).txt
+├── Consulting Playbook Day 3_Reading the Room & Red Flags.txt
+├── Consulting Playbook Day 4_Solution Design & Pricing That Scales.txt
+├── Consulting Playbook Day 5_The Call Autopsy Protocol.txt
+├── Consulting Playbook Day 6_The $20K Audit Automation.txt
+├── Consulting Playbook Day 7_Why Communication Is EVERYTHING.txt
+├── Consulting Playbook Day 8_The Chinese Menu Technique.txt
+├── Consulting Playbook Day 9_Learn From My Recent Consulting Failure.txt
+├── Consulting Playbook Day 10_The 1-Hour Workshop Cheat Code.txt
+├── Consulting Playbook Day 11_The AI 90% of Consultants Don't Know.txt
+├── Consulting Playbook Day 12_Become an AI Solution Architect.txt
+├── Consulting Playbook Day 13_How to Get Inbound Clients (Without Cold).txt
+├── Consulting Playbook Day 14_How to Deliver a KILLER Workshop.txt
+└── Consulting Playbook Day 15_ The B2B Goldmine Community Play.txt
+```
+
+#### Benefits:
+- **Accessibility**: Text-based content for users who prefer reading over video
+- **Searchability**: Ability to search across video content via text  
+- **Reference Material**: Easy copy/paste of specific concepts and quotes
+- **Learning Support**: Alternative format for different learning styles
+- **Content Analysis**: Foundation for future content indexing and search features
+
+#### Git Integration:
+- **Commit**: `3195712` - Added complete transcripts folder with descriptive commit message
+- **Status**: Successfully pushed to GitHub main branch
+- **Repository**: https://github.com/Drfiya/Playbook
+
+---
+
+## 🚀 Previous Updates (November 12, 2025)
 
 ### ✨ NEW: Chapter 15 - "The B2B Goldmine Community Play" 
 **Complete integration of the final chapter with comprehensive content**
