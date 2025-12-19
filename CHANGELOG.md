@@ -41,123 +41,108 @@ This changelog documents all development changes made to the AI Consulting Playb
 
 ## 🚀 Latest Updates (December 18, 2025)
 
-### 🤖 AI Coach Webhook Integration - NEEDS n8n FIX ⚠️
-**Status:** Frontend complete, n8n webhook returns empty response - needs "Respond to Webhook" node fix
-**Root Cause:** The n8n "Respond to Webhook" node expression `{{ $json.output }}` returns empty
+### 🤖 AI Coach Webhook Integration - DEBUGGING IN PROGRESS ⚠️
+**Status:** Frontend complete and deployed. n8n workflow needs configuration fixes.
+**Deployed URL:** https://playbook-dyx.pages.dev/
 
 ---
 
-#### 🔴 CONFIRMED ISSUE (curl test):
-```bash
-curl -X POST "https://fiyasolutions.app.n8n.cloud/webhook/32fad67f-4be9-4670-8abc-d5028304fcd5" \
-  -H "Content-Type: application/json" -d '{"chatInput": "Hello"}'
-# Returns: HTTP 200, Content-Length: 0 (EMPTY BODY)
-```
+#### 📁 Files Modified This Session:
 
-The webhook receives requests, the AI Agent processes them (visible in n8n Output panel), but the response is not being returned to the caller.
-
----
-
-#### ✅ FIX REQUIRED IN n8n:
-
-**Step 1: Add a "Set" node between the AI Agent and "Respond to Webhook"**
-
-In your n8n workflow, add a **Set** node after the AI Agent:
-1. Click "+" after your AI Agent node
-2. Add a "Set" node
-3. Configure it:
-   - **Mode**: Manual Mapping
-   - **Add Field**:
-     - Name: `response`
-     - Value: `{{ $json.output }}`
-
-**Step 2: Update "Respond to Webhook" node**
-- **Respond With**: JSON
-- **Response Body**: `={{ { "response": $json.response } }}`
-
-**Alternative: Use "All Incoming Items"**
-In "Respond to Webhook" node:
-- **Respond With**: All Incoming Items
-- This will return whatever the previous node outputs
-
----
-
-#### 📁 Files Modified (Frontend):
 | File | Changes |
 |------|---------|
-| `src/services/aiChatService.js` | Enhanced error handling, better empty response messaging |
-| `src/components/AICoach.jsx` | Chat interface with loading states, error handling, dark mode |
-| `index.html` | Content Security Policy meta tag |
-| `public/_headers` | Cloudflare Pages CSP headers for CORS |
+| `src/services/aiChatService.js` | Enhanced error handling with detailed console logging for debugging empty responses |
+| `CHANGELOG.md` | Comprehensive documentation of n8n debugging session |
 
-#### ✅ What's WORKING:
-1. **Frontend UI Complete**: Chat interface with loading states, error handling, dark mode
-2. **n8n Agent Working**: RAG Agent processes queries (verified in n8n Output panel)
-3. **Webhook Receives Requests**: POST requests reach n8n successfully (HTTP 200)
-
-#### ❌ What's NOT WORKING:
-1. **Empty Response**: n8n "Respond to Webhook" node returns `Content-Length: 0`
-2. **Expression Issue**: `{{ $json.output }}` doesn't capture the Agent output correctly
+#### 🔄 Git Commits:
+- `cd7670b` - Improve AI Coach error handling for n8n webhook
 
 ---
 
-#### 🔧 n8n Workflow Configuration:
-**Webhook URL:** `https://fiyasolutions.app.n8n.cloud/webhook/32fad67f-4be9-4670-8abc-d5028304fcd5`
+#### 🐛 Issues Discovered & Diagnosed:
 
-**Current Workflow:**
-```
-Webhook (POST) → AI Agent → Respond to Webhook (BROKEN)
-```
+**1. Empty Webhook Response (Content-Length: 0)**
+- **Symptom**: curl requests return HTTP 200 but empty body
+- **Verified**: Webhook receives requests, AI Agent processes them (visible in n8n Output panel)
+- **Root Cause**: "Respond to Webhook" node not returning agent output
 
-**Fixed Workflow:**
-```
-Webhook (POST) → AI Agent → Set Node (format response) → Respond to Webhook
-```
+**2. Simple Memory "No Session ID" Error**
+- **Symptom**: Workflow execution fails with "No session ID found"
+- **Cause**: Simple Memory node was set to "Connected Chat Trigger Node" but webhook doesn't send `sessionId`
+- **Fix Applied**: Changed to "Define below" with static key `playbook-chat`
 
-**Frontend expects this JSON format:**
-```json
-{
-  "response": "The AI's answer text here..."
-}
+**3. Webhook Node Configuration**
+- **Verified**: "Respond" parameter correctly set to "Using 'Respond to Webhook' Node"
+- **Verified**: Connections are `Webhook → Reranking RAG Agent → Respond to Webhook`
+
+---
+
+#### 🔴 Current Issue:
+The n8n workflow still returns empty response. Debugging ongoing to identify why "Respond to Webhook" node returns `Content-Length: 0` even though:
+- Webhook triggers correctly
+- AI Agent generates output (visible in n8n UI)
+- Respond to Webhook is set to "All Incoming Items"
+
+#### 🔧 n8n Workflow Architecture:
+```
+Webhook (POST)
+    ↓
+Reranking RAG Agent
+    ├── OpenAI Chat Model (gpt-4o-mini)
+    ├── Simple Memory (session: playbook-chat)
+    ├── Supabase Vector Store - Retrieval
+    └── Cohere Reranker
+    ↓
+Respond to Webhook (All Incoming Items)
 ```
 
 ---
 
-#### 📋 Current Frontend Payload:
+#### 📋 Frontend-to-n8n Communication:
+
+**Request (from frontend):**
 ```javascript
-// src/services/aiChatService.js sends:
-{
-  chatInput: "User's message"  // Field expected by n8n Agent
-}
+POST https://fiyasolutions.app.n8n.cloud/webhook/32fad67f-4be9-4670-8abc-d5028304fcd5
+Content-Type: application/json
 
-// Expected response format:
-{
-  response: "AI's reply text"
-}
+{ "chatInput": "User's message" }
 ```
 
----
+**Expected Response (from n8n):**
+```json
+{ "response": "AI's reply text" }
+// or
+{ "output": "AI's reply text" }
+```
 
-#### 📂 Reference Files in Repo:
-- `Webhook-flow.txt` - Full n8n workflow JSON export
-- `Respond-to-webhook.JPG` - Screenshot of n8n Respond node config
-- `Respond-to-webhook2.JPG` - Updated screenshot
-- `Reranking-agent.JPG` - Screenshot of Agent node config
+**Frontend handles multiple response formats:**
+```javascript
+data.response || data.output || data.message || data.text || data.content
+```
 
 ---
 
 #### 🚀 Deployment:
 - **Platform**: Cloudflare Pages
+- **Live URL**: https://playbook-dyx.pages.dev/
 - **Repo**: https://github.com/Drfiya/Playbook
 - **Auto-deploy**: Pushes to `main` branch trigger deployment
-- **Build command**: `npm run build`
-- **Output directory**: `dist`
 
 ---
 
-### 📝 CLAUDE.md Enhancement
-**What:** Added AI Coach integration documentation and Inter font specification
-**Files Changed:** `CLAUDE.md`
+#### 📂 Debugging Screenshots (not committed):
+- `Node-connections.JPG` - Workflow node connections
+- `Respond-to-webhook3.JPG` - Respond node showing input data
+- `Simple-memory.JPG` - Simple Memory configuration
+- Various other debugging screenshots in project root
+
+---
+
+#### 🔨 Next Steps to Complete Integration:
+1. Verify n8n workflow executes without errors
+2. Confirm "Respond to Webhook" node receives data from AI Agent
+3. Test that response body is populated (not empty)
+4. Verify CORS headers allow frontend domain
 
 ---
 

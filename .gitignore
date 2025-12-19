@@ -31,3 +31,11 @@ lerna-debug.log*
 
 # misc
 .DS_Store
+
+# Debug screenshots and temporary files
+*.JPG
+Webhook-flow.txt
+nul
+
+# Claude Code local settings
+.claude/settings.local.json
