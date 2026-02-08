@@ -14,7 +14,7 @@
   - 💾 Local storage for progress persistence
 
 ## URLs
-- **Live Application**: https://3000-ipxioi0x16zdyte00malr-d0b9e1e2.sandbox.novita.ai/
+- **Live Application**: https://playbook-rho.vercel.app/
 - **GitHub Repository**: https://github.com/Drfiya/Playbook
 
 ## Core Features
@@ -224,9 +224,8 @@ pm2 start ecosystem.config.cjs
 ```
 
 ### Configuration Notes
-- The `vite.config.js` includes `preview.allowedHosts` configuration for sandbox deployment
-- Update the allowed hosts array if deploying to different domains
-- Current configuration supports: `3000-ipxioi0x16zdyte00malr-d0b9e1e2.sandbox.novita.ai`
+- Deployed on **Vercel** at `https://playbook-rho.vercel.app/`
+- GitHub repo: `https://github.com/Drfiya/Playbook`
 
 ## Environment Variables
 Currently no environment variables required. Future versions may need:
